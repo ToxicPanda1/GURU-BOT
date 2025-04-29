@@ -1,19 +1,11 @@
-FROM node:lts-buster
+FROM quay.io/gurusensei/gurubhay:latest
 
-RUN apt-get update && \
-  apt-get install -y \
-  ffmpeg \
-  imagemagick \
-  webp && \
-  apt-get upgrade -y && \
-  rm -rf /var/lib/apt/lists/*
+RUN git clone https://github.com/Guru322/GURU-Ai /root/guru
 
-COPY package.json .
+WORKDIR /root/guru/
 
-RUN npm install && npm install qrcode-terminal
+RUN npm install --platform=linuxmusl
 
-COPY . .
+EXPOSE 5000
 
-EXPOSE 3000
-
-CMD ["node", "index.js", "--server"]
+CMD ["npm", "start"]

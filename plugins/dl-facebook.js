@@ -1,52 +1,111 @@
-import fg from 'api-dylux' 
+// filepath: /workspaces/GURU-Ai/plugins/dl-facebook.js
 import fetch from 'node-fetch'
-import { savefrom, facebookdl, facebookdlv2 } from '@bochilteam/scraper'
-import fbDownloader from 'fb-downloader-scrapper'
-let handler = async (m, { conn, args, command, usedPrefix }) => {
-if (!args[0]) throw `THIS CMD CAN DOWNLOAD FB VIDEOS, EXAMPLE: ${usedPrefix + command}* https://fb.watch/fOTpgn6UFQ/` 
-if (!args[0].match(/www.facebook.com|fb.watch/g)) throw `*NOT A FB LINK, EXAMPLE: ${usedPrefix + command}* https://fb.watch/fOTpgn6UFQ/`
-try {
-m.reply(`*DOWNLOADING YOUR VIDEO , IT MAY TAKE SOMETIME DEPENDING ON SIZE*`)    
-let Rres = await fetch(`https://api.lolhuman.xyz/api/facebook?apikey=${lolkeysapi}&url=${args[0]}`)
-let Jjson = await Rres.json()
-let VIDEO = Jjson.result[0]
-if (VIDEO == '' || !VIDEO || VIDEO == null) VIDEO = Jjson.result[1]
-conn.sendFile(m.chat, VIDEO, 'error.mp4', `*HERE U GO*`, m)    
-} catch (err1) {
-console.log('1 ' + err1)    
-try {
-let ress = await fg.fbdl(args[0])
-let urll = await ress.data[0].url    
-await conn.sendFile(m.chat, urll, 'error.mp4', '*HERE U GO*', m)     
-} catch (err2) {
-console.log('2 ' + err2)    
-try {
-let res = await fbDownloader(args[0])
-for (let result of res.download) {
-let ur = result.url    
-await conn.sendFile(m.chat, ur, 'error.mp4', '*HERE U GO*', m)}
-} catch (err3) {
-console.log('3 ' + err3)    
-try { 
-let vio = await fetch(`https://api.violetics.pw/api/downloader/facebook?apikey=beta&url=${args[0]}`)  
-let vioo = await vio.json()
-let videovio = `${vioo.result.hd.url || vioo.result.sd.url}`
-await conn.sendFile(m.chat, videovio, `error.mp4`, '*HERE U GO*', m)
-} catch (err4) {
-console.log('4 ' + err4)    
-try {
-let res3 = await fetch(`https://latam-api.vercel.app/api/facebookdl?apikey=brunosobrino&q=${args[0]}`)  
-let json = await res3.json()
-let url3 = await json.video
-await conn.sendFile(m.chat, url3, 'error.mp4', '*HERE U GO*', m)         
-} catch (err5) {
-console.log('5 ' + err5)    
-try {
-const { result } = await facebookdl(args[0]).catch(async _ => await facebookdlv2(args[0])).catch(async _ => await savefrom(args[0]))
-for (const { url, isVideo } of result.reverse()) await conn.sendFile(m.chat, url, `facebook.${!isVideo ? 'bin' : 'mp4'}`, '*HERE U GO*', m)    
-} catch (err6) {
-console.log('6 ' + err6)    
-throw `*SOME ERRORED WE ARE TRYING HARD TO FIX ASAP*`
-}}}}}}}
-handler.command = /^(facebook|fb|facebookdl|fbdl|facebook2|fb2|facebookdl2|fbdl2|facebook3|fb3|facebookdl3|fbdl3|facebook4|fb4|facebookdl4|fbdl4|facebook5|fb5|facebookdl5|fbdl5)$/i
+
+let handler = async (m, { conn, args, usedPrefix, command }) => {
+  if (!args[0]) throw `✳️ Example:\n${usedPrefix + command} https://www.facebook.com/watch?v=123456789`
+  
+  if (!/https?:\/\/(www\.|web\.|m\.)?facebook\.com/i.test(args[0]))
+    throw `❎ Please provide a valid Facebook URL`
+
+  m.react(rwait)
+  
+  try {
+    const apiUrl = `https://api.mobahub.com/`
+    
+    const headers = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    }
+    
+    if (process.env.COBALT_API_KEY) {
+      headers['Authorization'] = `Api-Key ${process.env.COBALT_API_KEY}`
+    }
+    
+    const requestBody = {
+      url: args[0],
+      filenameStyle: 'pretty',
+      videoQuality: 'max', // Get highest quality available
+      downloadMode: 'auto'
+    }
+    
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(requestBody)
+    })
+    
+    const data = await response.json()
+    
+    if (data.status === 'error') {
+      throw new Error(`API error: ${data.error.code}`)
+    }
+    
+    if (data.status === 'picker') {
+      await m.reply(`✅ *Found ${data.picker.length} media items!*\n\n📤 *Downloading now...*`)
+      
+      for (let i = 0; i < data.picker.length; i++) {
+        const item = data.picker[i]
+        const isVideo = item.type === 'video'
+        
+        if (isVideo) {
+          await conn.sendFile(
+            m.chat, 
+            item.url, 
+            `facebook-video-${i+1}.mp4`, 
+            `📹 *Facebook Video ${i + 1}/${data.picker.length}*`, 
+            m,
+            false,
+            { mimetype: 'video/mp4' }
+          )
+        } else if (item.type === 'photo') {
+          await conn.sendFile(
+            m.chat, 
+            item.url, 
+            `facebook-photo-${i+1}.jpg`, 
+            `🖼️ *Facebook Photo ${i + 1}/${data.picker.length}*`, 
+            m,
+            false,
+            { mimetype: 'image/jpeg' }
+          )
+        }
+      }
+    } 
+    else if (data.status === 'redirect' || data.status === 'tunnel') {
+      const mediaUrl = data.url
+      const filename = data.filename || 'facebook-video.mp4'
+      
+      await m.reply('📥 *Downloading Facebook media...*')
+      
+      const caption = `
+      ≡ *GURU FB DOWNLOADER*
+      
+      ▢ *Filename:* ${filename}
+      `
+      
+      await conn.sendFile(
+        m.chat, 
+        mediaUrl, 
+        filename, 
+        caption, 
+        m, 
+        false, 
+        { mimetype: filename.endsWith('.mp4') ? 'video/mp4' : 'image/jpeg' }
+      )
+    } else {
+      throw new Error(`Unexpected response status: ${data.status}`)
+    }
+
+    m.react(done)
+  } catch (error) {
+    console.error('Facebook download error:', error)
+    m.react(error)
+    m.reply(`❎ Error: ${error.message}`)
+  }
+}
+
+handler.help = ['facebook']
+handler.tags = ['downloader']
+handler.command = ['fb', 'fbdl', 'facebook', 'fbvid']
+handler.desc = 'Download Facebook videos/photos using a URL'
+
 export default handler
